@@ -19,12 +19,12 @@ export default function TaskManager({ initialHomeworks }: TaskManagerProps) {
       setIsLoading(true);
       setError(null);
       try {
-        const url = currentCursor 
-          ? `/api/history?cursor=${encodeURIComponent(currentCursor)}` 
+        const url = currentCursor
+          ? `/api/history?cursor=${encodeURIComponent(currentCursor)}`
           : "/api/history";
-        
+
         const res = await fetch(url);
-        
+
         if (!res.ok) {
           throw new Error("取得歷史資料失敗");
         }
