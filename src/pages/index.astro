@@ -1,11 +1,121 @@
 ---
-import Welcome from '../components/Welcome.astro';
-import Layout from '../layouts/Layout.astro';
+import Layout from "../layouts/Layout.astro";
+import HomeworkList, { type Homework } from "../components/HomeworkList";
+import { Heart } from "@lucide/astro";
+import HeaderCard from "../components/HeaderCard";
 
-// Welcome to Astro! Wondering what to do next? Check out the Astro documentation at https://docs.astro.build
-// Don't want to use any of this? Delete everything in this file, the `assets`, `components`, and `layouts` directories, and start fresh.
+// ====== 邊緣節點快取設定 (10 分鐘) ======
+// 這行會自動在 Cloudflare Worker 上套用 caching
+Astro.response.headers.set(
+  "Cache-Control",
+  "public, s-maxage=600, max-age=600",
+);
+
+const NOTION_TOKEN = import.meta.env.NOTION_TOKEN;
+const NOTION_DATABASE_ID = import.meta.env.NOTION_DATABASE_ID;
+
+let homeworks: Homework[] = [];
+let fetchError: string | null = null;
+
+if (!NOTION_TOKEN || !NOTION_DATABASE_ID) {
+  fetchError = "系統尚未設定 Notion Token 或 Database ID (.env) ⚠️";
+} else {
+  try {
+    // 取得台灣時間 (UTC+8) 的今天日期
+    const tzOffset = 8 * 60 * 60 * 1000;
+    const todayStr = new Date(Date.now() + tzOffset)
+      .toISOString()
+      .split("T")[0];
+
+    const res = await fetch(
+      `https://api.notion.com/v1/data_sources/${NOTION_DATABASE_ID}/query`,
+
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${NOTION_TOKEN}`,
+          "Notion-Version": "2025-09-03",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          filter: {
+            property: "截止日期",
+            date: {
+              on_or_after: todayStr, // 過濾出今天(含)以後的作業，或是今天以前但尚未勾選（如果要抓取未完成可以再調整）
+            },
+          },
+          sorts: [{ property: "截止日期", direction: "ascending" }],
+        }),
+      },
+    );
+
+    if (!res.ok) {
+      throw new Error(`HTTP ${res.status} - ${res.statusText}`);
+    }
+
+    const data = await res.json();
+
+    // 轉換成前端需要的格式
+    homeworks = data.results.map((page: any) => {
+      const props = page.properties;
+      return {
+        id: page.id,
+        name: props["作業名稱"]?.title?.[0]?.plain_text || "無名稱",
+        subject: props["科目"]?.select?.name || "無科目",
+        deadline: props["截止日期"]?.date?.start || new Date().toISOString(),
+      };
+    });
+  } catch (e) {
+    fetchError = `無法取得 Notion 資料：${e instanceof Error ? e.message : e}`;
+  }
+}
+
+const now = new Date();
 ---
 
 <Layout>
-	<Welcome />
+  <!-- 頂部 Header -->
+  <header class="pt-8 pb-4">
+    <HeaderCard client:load />
+  </header>
+
+  <!-- 主內容 -->
+  <main class="mx-auto max-w-2xl px-4 py-8 space-y-6">
+    <!-- 作業區塊 -->
+    <section>
+      <div class="flex items-center gap-3 mb-6">
+        <div
+          class="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-100 text-blue-600 shadow-sm ring-1 ring-blue-200"
+        >
+          <span class="text-xl leading-none">📚</span>
+        </div>
+        <h2 class="text-xl font-extrabold text-slate-800">任務清單</h2>
+      </div>
+      {
+        fetchError ? (
+          <p class="text-sm text-red-500 font-medium">⚠️ {fetchError}</p>
+        ) : (
+          <HomeworkList homeworks={homeworks} client:load />
+        )
+      }
+    </section>
+  </main>
+
+  <!-- Footer -->
+  <footer
+    class="py-6 text-xs text-gray-400 flex items-center justify-center whitespace-pre-wrap"
+  >
+    {"Made with"}
+    <Heart class="h-3.5 w-3.5 mx-1 hover:fill-red-500" />
+    {"by "}
+    <p>
+      <a
+        target="_blank"
+        href="https://github.com/Dong-Chen-1031"
+        class="hover:text-gray-600 transition-colors"
+      >
+        Dong-Chen-1031
+      </a>
+    </p>
+  </footer>
 </Layout>
