@@ -1,8 +1,9 @@
 ---
 import Layout from "../layouts/Layout.astro";
-import HomeworkList, { type Homework } from "../components/HomeworkList";
+import TaskManager from "../components/TaskManager";
 import { Heart } from "@lucide/astro";
 import HeaderCard from "../components/HeaderCard";
+import type { Homework } from "../components/HomeworkList";
 
 // ====== 邊緣節點快取設定 (10 分鐘) ======
 // 這行會自動在 Cloudflare Worker 上套用 caching
@@ -83,19 +84,19 @@ const now = new Date();
   <main class="mx-auto max-w-2xl px-4 py-8 space-y-6">
     <!-- 作業區塊 -->
     <section>
-      <div class="flex items-center gap-3 mb-6">
-        <div
-          class="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-100 text-blue-600 shadow-sm ring-1 ring-blue-200"
-        >
-          <span class="text-xl leading-none">📚</span>
-        </div>
-        <h2 class="text-xl font-extrabold text-slate-800">任務清單</h2>
-      </div>
       {
         fetchError ? (
-          <p class="text-sm text-red-500 font-medium">⚠️ {fetchError}</p>
+          <>
+            <div class="flex items-center gap-3 mb-6">
+              <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-100 text-blue-600 shadow-sm ring-1 ring-blue-200">
+                <span class="text-xl leading-none">📚</span>
+              </div>
+              <h2 class="text-xl font-extrabold text-slate-800">任務清單</h2>
+            </div>
+            <p class="text-sm text-red-500 font-medium">⚠️ {fetchError}</p>
+          </>
         ) : (
-          <HomeworkList homeworks={homeworks} client:load />
+          <TaskManager initialHomeworks={homeworks} client:load />
         )
       }
     </section>
