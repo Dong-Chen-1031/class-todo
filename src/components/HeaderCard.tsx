@@ -30,27 +30,10 @@ export default function HeaderCard() {
       setDeg({ x: 0, y: 0 });
     };
 
-    const handleDeviceOrientation = (e: DeviceOrientationEvent) => {
-      if (e.beta === null || e.gamma === null) return;
-      setInputType("gyro");
-
-      // 假設自然拿手機的角度為 45 度 (beta)
-      const beta = Math.max(-45, Math.min(45, e.beta - 45));
-      const gamma = Math.max(-45, Math.min(45, e.gamma));
-
-      const x = -(beta / 45) * 15;
-      const y = (gamma / 45) * 10;
-      setDeg({ x, y });
-    };
-
     const el = cardRef.current;
     if (el) {
       el.addEventListener("mousemove", handleMouseMove);
       el.addEventListener("mouseleave", handleMouseLeave); // 改用 mouseleave 避免子元素干擾而頻繁閃爍
-    }
-
-    if (typeof window !== "undefined" && window.DeviceOrientationEvent) {
-      window.addEventListener("deviceorientation", handleDeviceOrientation);
     }
 
     return () => {
@@ -58,21 +41,13 @@ export default function HeaderCard() {
         el.removeEventListener("mousemove", handleMouseMove);
         el.removeEventListener("mouseleave", handleMouseLeave);
       }
-      if (typeof window !== "undefined" && window.DeviceOrientationEvent) {
-        window.removeEventListener(
-          "deviceorientation",
-          handleDeviceOrientation,
-        );
-      }
     };
   }, []);
 
   const transitionStyle =
     inputType === "none"
       ? "transform 0.6s cubic-bezier(0.25, 1, 0.5, 1)" // 返回原本位置時的平滑過渡
-      : inputType === "gyro"
-        ? "transform 0.15s linear" // 陀螺儀的跟隨
-        : "transform 0.1s ease-out"; // 滑鼠的跟隨
+      : "transform 0.1s ease-out"; // 滑鼠的跟隨
 
   return (
     <div
