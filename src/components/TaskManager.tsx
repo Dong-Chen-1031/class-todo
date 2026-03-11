@@ -121,7 +121,7 @@ export default function TaskManager({ initialHomeworks }: TaskManagerProps) {
                     disabled={isLoading}
                     className="px-5 py-2.5 rounded-xl bg-slate-50 text-slate-600 text-sm font-semibold ring-1 ring-inset ring-slate-200 hover:bg-slate-100 hover:text-slate-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    {isLoading ? "載入中..." : "往下滑載入更多 ⬇️"}
+                    {isLoading ? "載入中..." : "載入更多"}
                   </button>
                 </div>
               )}
