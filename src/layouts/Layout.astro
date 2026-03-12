@@ -17,6 +17,19 @@ const { title = "建中 110 作業列表" } = Astro.props;
     <link rel="icon" href="/ck110icon.jpg" />
     <meta name="generator" content={Astro.generator} />
     <title>{title}</title>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-3R59NWGFGP"
+    ></script>
+    <script>
+      // @ts-nocheck
+      window.dataLayer = window.dataLayer || [];
+      function gtag() {
+        dataLayer.push(arguments);
+      }
+      gtag("js", new Date());
+
+      gtag("config", "G-3R59NWGFGP");
+    </script>
   </head>
   <body
     class="min-h-screen content-center relative bg-slate-50 text-slate-800 antialiased selection:bg-blue-200"
