@@ -12,16 +12,18 @@ export default function TaskManager({ initialHomeworks }: TaskManagerProps) {
   const [hasMore, setHasMore] = useState<boolean>(true);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  const [subjects, setSubjects] = useState<string[]>([]);
+  const [selectedSubject, setSelectedSubject] = useState<string>("");
 
   const fetchHistory = useCallback(
-    async (currentCursor: string | null) => {
-      if (isLoading || (!hasMore && currentCursor !== null)) return;
+    async (currentCursor: string | null, subject: string) => {
       setIsLoading(true);
       setError(null);
       try {
-        const url = currentCursor
-          ? `/api/history?cursor=${encodeURIComponent(currentCursor)}`
-          : "/api/history";
+        const params = new URLSearchParams();
+        if (currentCursor) params.set("cursor", currentCursor);
+        if (subject) params.set("subject", subject);
+        const url = `/api/history${params.toString() ? `?${params.toString()}` : ""}`;
 
         const res = await fetch(url);
 
@@ -40,7 +42,7 @@ export default function TaskManager({ initialHomeworks }: TaskManagerProps) {
         setIsLoading(false);
       }
     },
-    [isLoading, hasMore],
+    [],
   );
 
   // Load initial history when switching tab
@@ -52,9 +54,30 @@ export default function TaskManager({ initialHomeworks }: TaskManagerProps) {
       !isLoading &&
       !error
     ) {
-      fetchHistory(null);
+      fetchHistory(null, selectedSubject);
     }
-  }, [tab, historyHw.length, hasMore, isLoading, error, fetchHistory]);
+  }, [tab, historyHw.length, hasMore, isLoading, error, fetchHistory, selectedSubject]);
+
+  // Fetch subjects from Notion when history tab is first opened
+  useEffect(() => {
+    if (tab === "history" && subjects.length === 0) {
+      fetch("/api/subjects")
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.subjects) setSubjects(data.subjects);
+        })
+        .catch(() => {});
+    }
+  }, [tab, subjects.length]);
+
+  // Reset and reload history when selected subject changes
+  const handleSubjectChange = useCallback((subject: string) => {
+    setSelectedSubject(subject);
+    setHistoryHw([]);
+    setCursor(null);
+    setHasMore(true);
+    setError(null);
+  }, []);
 
   return (
     <div className="space-y-6">
@@ -98,6 +121,31 @@ export default function TaskManager({ initialHomeworks }: TaskManagerProps) {
         <HomeworkList homeworks={initialHomeworks} />
       ) : (
         <div className="space-y-6">
+          {/* Subject filter dropdown */}
+          {subjects.length > 0 && (
+            <div className="flex items-center gap-3">
+              <label
+                htmlFor="subject-filter"
+                className="text-sm font-semibold text-slate-600 shrink-0"
+              >
+                科目篩選
+              </label>
+              <select
+                id="subject-filter"
+                value={selectedSubject}
+                onChange={(e) => handleSubjectChange(e.target.value)}
+                className="rounded-xl border-0 bg-slate-100 px-3 py-2 text-sm font-medium text-slate-700 ring-1 ring-inset ring-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-400 transition-all"
+              >
+                <option value="">全部科目</option>
+                {subjects.map((s) => (
+                  <option key={s} value={s}>
+                    {s}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
           {error ? (
             <p className="text-sm text-red-500 font-medium text-center">
               ⚠️ {error}
@@ -117,7 +165,7 @@ export default function TaskManager({ initialHomeworks }: TaskManagerProps) {
               {hasMore && (
                 <div className="flex justify-center pt-2 pb-6">
                   <button
-                    onClick={() => fetchHistory(cursor)}
+                    onClick={() => fetchHistory(cursor, selectedSubject)}
                     disabled={isLoading}
                     className="px-5 py-2.5 rounded-xl bg-slate-50 text-slate-600 text-sm font-semibold ring-1 ring-inset ring-slate-200 hover:bg-slate-100 hover:text-slate-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
