@@ -19,30 +19,42 @@ export const GET: APIRoute = async ({ request }) => {
   try {
     const url = new URL(request.url);
     const cursor = url.searchParams.get("cursor");
+    const subject = url.searchParams.get("subject");
 
     const tzOffset = 8 * 60 * 60 * 1000;
     const todayStr = new Date(Date.now() + tzOffset)
       .toISOString()
       .split("T")[0];
 
+    const dateFilters: any[] = [
+      {
+        property: "截止日期",
+        date: {
+          before: todayStr,
+        },
+      },
+      {
+        property: "截止日期",
+        date: {
+          on_or_after: "2026-02-25",
+        },
+      },
+    ];
+
+    if (subject) {
+      dateFilters.push({
+        property: "科目",
+        select: {
+          equals: subject,
+        },
+      });
+    }
+
     // Notion query payload
     const notionReqBody: any = {
       page_size: 10,
       filter: {
-        and: [
-          {
-            property: "截止日期",
-            date: {
-              before: todayStr,
-            },
-          },
-          {
-            property: "截止日期",
-            date: {
-              on_or_after: "2026-02-25",
-            },
-          },
-        ],
+        and: dateFilters,
       },
       sorts: [{ property: "截止日期", direction: "descending" }],
     };
