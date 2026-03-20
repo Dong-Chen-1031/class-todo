@@ -17,33 +17,9 @@ export const GET: APIRoute = async () => {
   }
 
   try {
-    // Step 1: Retrieve the database to get the data_source ID
-    const dbRes = await fetch(
-      `https://api.notion.com/v1/databases/${NOTION_DATABASE_ID}`,
-      {
-        headers: {
-          Authorization: `Bearer ${NOTION_TOKEN}`,
-          "Notion-Version": "2026-03-11",
-        },
-      },
-    );
-
-    if (!dbRes.ok) {
-      const errText = await dbRes.text();
-      console.error("Notion API Error fetching database:", errText);
-      throw new Error(`HTTP ${dbRes.status} - ${dbRes.statusText}`);
-    }
-
-    const dbData = await dbRes.json();
-    const dataSourceId: string | undefined = dbData.data_sources?.[0]?.id;
-
-    if (!dataSourceId) {
-      throw new Error("No data_source ID found in database response");
-    }
-
     // Step 2: Retrieve the data source schema to get select options
     const dsRes = await fetch(
-      `https://api.notion.com/v1/data_sources/${dataSourceId}`,
+      `https://api.notion.com/v1/data_sources/${NOTION_DATABASE_ID}`,
       {
         headers: {
           Authorization: `Bearer ${NOTION_TOKEN}`,
